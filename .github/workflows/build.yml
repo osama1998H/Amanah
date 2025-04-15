@@ -1,0 +1,131 @@
+on: [push]
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    name: Static Analysis
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.4.0
+        with:
+          go-version: '^1.20'
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Run Static Code Analysis
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint run
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    needs: static-analysis
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.4.0
+        with:
+          go-version: '^1.20'
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Run Tests with Coverage
+        run: |
+          mkdir -p coverage
+          go test -v -coverprofile=coverage/coverage.out ./...
+          go tool cover -func=coverage/coverage.out
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: coverage-report
+          path: coverage/coverage.out
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Application
+    needs: test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.4.0
+        with:
+          go-version: '^1.20'
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Build Application
+        run: |
+          mkdir -p build
+          go build -o build/app ./...
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: build-artifact
+          path: build/app
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Docker Build and Push
+    needs: build
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.2.2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/go_app:latest .
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/go_app:latest
+
+  benchmark:
+    runs-on: ubuntu-latest
+    name: Run Benchmarks
+    needs: test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.4.0
+        with:
+          go-version: '^1.20'
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Run Benchmark Tests
+        run: |
+          mkdir -p benchmark_reports
+          go test -bench=. > benchmark_reports/benchmark_results.txt
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: benchmark-results
+          path: benchmark_reports/benchmark_results.txt
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify Build Status
+    needs: [static-analysis, test, build, docker]
+    steps:
+      - name: Notify Build Status
+        if: failure()
+        run: echo "Build failed!"

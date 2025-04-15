@@ -1,0 +1,36 @@
+name: Issue Automation
+
+on:
+  issues:
+    types: [opened, labeled, closed]
+
+permissions:
+  issues: write
+
+jobs:
+  handle-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Add Label to New Issues
+        if: ${{ github.event.action == 'opened' }}
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: "triage"
+
+      - name: Comment on Labeled Issues
+        if: ${{ github.event.action == 'labeled' && github.event.label.name == 'bug' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Thank you for reporting this bug! The team will review it shortly.
+
+      - name: Log Closed Issues
+        if: ${{ github.event.action == 'closed' }}
+        run: echo "Issue #${{ github.event.issue.number }} has been closed."
