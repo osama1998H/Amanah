@@ -1,0 +1,36 @@
+# Gitignore file for Go projects
+
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build artifacts, and coverage reports
+*.test
+*.out
+*.cover
+coverage/
+
+# Dependency directories (vendor/)
+vendor/
+
+# Go workspace file
+*.code-workspace
+
+# IDE and editor settings
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker related files
+**/docker-compose.override.yml
+**/docker-compose.override.yaml
