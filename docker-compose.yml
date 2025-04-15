@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - amanah-network
+    depends_on:
+      - redis
+      - pocketbase
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - amanah-network
+    volumes:
+      - redis-data:/data
+
+  pocketbase:
+    image: pocketbase/pocketbase:latest
+    container_name: pocketbase
+    ports:
+      - "8090:8090"
+    networks:
+      - amanah-network
+    volumes:
+      - pocketbase-data:/pb_data
+
+networks:
+  amanah-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  pocketbase-data:
