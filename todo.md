@@ -1,10 +1,10 @@
 # To-Do Checklist for Amanah Project
 
 ## Initial Setup
-- [ ] Set up a Git repository for version control.
-- [ ] Define the project structure and directory layout.
-- [ ] Create a README file with an overview of the project.
-- [ ] Set up a Go module (`go mod init`).
+- [x] Set up a Git repository for version control.
+- [x] Define the project structure and directory layout.
+- [x] Create a README file with an overview of the project.
+- [x] Set up a Go module (`go mod init`).
 - [ ] Install necessary dependencies and libraries.
 
 ## Core Development
