@@ -24,14 +24,16 @@ services:
       - redis-data:/data
 
   pocketbase:
-    image: pocketbase/pocketbase:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.pocketbase
     container_name: pocketbase
     ports:
-      - "8090:8090"
+      - "8090:8080"
     networks:
       - amanah-network
     volumes:
-      - pocketbase-data:/pb_data
+      - pocketbase-data:/pb/pb_data
 
 networks:
   amanah-network:
