@@ -22,6 +22,17 @@ services:
     volumes:
       - redis-data:/data
 
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - amanah-network
+    depends_on:
+      - app
+
 networks:
   amanah-network:
     driver: bridge
