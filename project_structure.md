@@ -11,6 +11,7 @@ Amanah/
 ├── configs/           # Configuration files for different environments
 ├── deployments/       # Deployment scripts and manifests
 ├── docs/              # Documentation for the project
+├── integrations/      # Connectors to external payment providers
 ├── tests/             # End-to-end and integration tests
 ├── scripts/           # Automation and utility scripts
 └── README.md          # Project overview and instructions
@@ -75,6 +76,15 @@ docs/
 ├── api.md              # API documentation
 ├── setup.md            # Setup and installation instructions
 └── README.md           # Documentation index
+```
+
+### `integrations/`
+Connectors to external payment providers:
+```
+integrations/
+├── stripe/             # Stripe client implementation
+├── paypal/             # PayPal client implementation
+└── README.md           # Connector guidelines
 ```
 
 ### `tests/`
