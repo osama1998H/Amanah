@@ -24,7 +24,7 @@ The project follows a microservices architecture to ensure modularity and scalab
 - Use `project_structure.md` for understanding the directory layout and service organization.
 
 ## Contributing
-Contributions are welcome! Please follow the guidelines in `CONTRIBUTING.md` (to be created) and ensure all changes are tested.
+Contributions are welcome! Please follow the guidelines in `CONTRIBUTING.md` and ensure all changes are tested.
 
 ## License
 This project is licensed under the MIT License. See `LICENSE` for more details.
