@@ -1,1 +1,7 @@
 # Staging configuration
+example:
+  port: 8002
+  log_level: info
+transaction:
+  port: 8082
+  log_level: info

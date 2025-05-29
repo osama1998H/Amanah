@@ -1,1 +1,7 @@
 # Development configuration
+example:
+  port: 8001
+  log_level: debug
+transaction:
+  port: 8081
+  log_level: debug

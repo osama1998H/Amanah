@@ -1,1 +1,7 @@
 # Production configuration
+example:
+  port: 8000
+  log_level: error
+transaction:
+  port: 8080
+  log_level: error
