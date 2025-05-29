@@ -17,10 +17,14 @@ The project follows a microservices architecture to ensure modularity and scalab
 1. Clone the repository: `git clone <repository-url>`
 2. Set up the project structure as defined in `project_structure.md`.
 3. Install dependencies and configure environment variables.
-4. Run the services using Docker or Kubernetes.
+4. Run the services using Docker Compose:
+   ```bash
+   docker-compose up --build
+   ```
+   This command starts the application along with Redis and any other services defined in `docker-compose.yml`.
 
 ## Documentation
-- Refer to `docs/` for detailed documentation on architecture, APIs, and setup instructions.
+- See `docs/architecture.md` for an overview of the system design and `docs/api.md` for API details. Additional documentation is available in the `docs/` directory.
 - Use `project_structure.md` for understanding the directory layout and service organization.
 
 ## Contributing
