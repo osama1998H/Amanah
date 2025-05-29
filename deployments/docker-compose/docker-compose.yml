@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  example:
+    build:
+      context: ../../services/example
+    container_name: example-service
+    ports:
+      - "8000:8000"
+    networks:
+      - amanah-network
+
+  transaction:
+    build:
+      context: ../../services/transaction
+    container_name: transaction-service
+    ports:
+      - "8080:8080"
+    networks:
+      - amanah-network
+
+networks:
+  amanah-network:
+    driver: bridge

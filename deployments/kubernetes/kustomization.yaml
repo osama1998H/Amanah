@@ -1,0 +1,5 @@
+resources:
+  - example-deployment.yaml
+  - example-service.yaml
+  - transaction-deployment.yaml
+  - transaction-service.yaml
