@@ -1,7 +1,7 @@
 # Dockerfile for the Amanah Go application
 
 # Use the official Golang image as a base image
-FROM golang:1.24 as builder
+FROM golang:1.25 as builder
 
 # Set the working directory
 WORKDIR /app
