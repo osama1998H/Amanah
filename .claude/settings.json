@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/user/Amanah/.claude/hooks/stop-hook.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/user/Amanah/.claude/hooks/user-prompt-submit-hook.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -298,6 +298,76 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) runs on every push:
 - [ ] Integration and E2E tests
 - [ ] PCI DSS compliance
 
+## Ralph Wiggum - Autonomous Loops
+
+This project includes the Ralph Wiggum hooks protocol for autonomous, long-running task execution.
+
+### Quick Start
+
+**Start an autonomous loop:**
+```bash
+# Using the direct script (recommended for AI assistants)
+.claude/scripts/start-ralph-loop.sh "Your task description" 20 "DONE"
+
+# Arguments: <prompt> [max_iterations] [completion_promise]
+```
+
+**Check loop status:**
+```bash
+.claude/scripts/ralph-state.sh status
+```
+
+**Cancel a loop:**
+```bash
+.claude/scripts/ralph-state.sh cancel
+```
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ralph-loop` | Start autonomous loop (slash command) |
+| `/cancel-ralph` | Cancel active loop |
+| `/ralph-status` | Check loop status |
+
+### How It Works
+
+1. Loop is initialized with a task prompt and iteration limits
+2. Claude works on the task until it attempts to stop
+3. The Stop hook intercepts and checks completion criteria
+4. If not complete, Claude is prompted to continue
+5. Loop repeats until criteria met or max iterations reached
+
+### Writing Effective Prompts
+
+```bash
+.claude/scripts/start-ralph-loop.sh \
+  "Implement feature X. Requirements:
+   - Requirement 1
+   - Requirement 2
+   Run tests after each change. Output COMPLETE when done." \
+  30 \
+  "COMPLETE"
+```
+
+### Files
+
+```
+.claude/
+├── hooks/
+│   ├── stop-hook.sh              # Intercepts stop attempts
+│   └── user-prompt-submit-hook.sh # Injects loop context
+├── scripts/
+│   ├── ralph-state.sh            # State management
+│   ├── start-ralph-loop.sh       # Direct loop initiation
+│   └── check-ralph-continue.sh   # Check continuation status
+├── commands/
+│   ├── ralph-loop.md             # /ralph-loop command
+│   ├── cancel-ralph.md           # /cancel-ralph command
+│   └── ralph-status.md           # /ralph-status command
+└── settings.json                 # Hook configuration
+```
+
 ## Tips for AI Assistants
 
 1. **Read before modifying** - Always read existing code before suggesting changes
@@ -308,3 +378,4 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) runs on every push:
 6. **Check TODOs** - Review `todo.md` for project priorities
 7. **Document APIs** - Update `docs/api.md` when adding endpoints
 8. **Security first** - Consider security implications of all changes
+9. **Use ralph-loop for large tasks** - For multi-step implementations, use the autonomous loop
