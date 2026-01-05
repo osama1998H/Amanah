@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -86,12 +87,15 @@ func (c *Client) Charge(req *ChargeRequest) (*ChargeResponse, error) {
 		return nil, ErrInvalidAmount
 	}
 
-	// Build form data (Stripe uses form encoding)
-	data := fmt.Sprintf("amount=%d&currency=%s&source=%s",
-		req.Amount, req.Currency, req.Source)
+	// Build form data with proper URL encoding (Stripe uses form encoding)
+	formData := url.Values{}
+	formData.Set("amount", fmt.Sprintf("%d", req.Amount))
+	formData.Set("currency", req.Currency)
+	formData.Set("source", req.Source)
 	if req.Description != "" {
-		data += "&description=" + req.Description
+		formData.Set("description", req.Description)
 	}
+	data := formData.Encode()
 
 	httpReq, err := http.NewRequest("POST", c.BaseURL+"/charges", bytes.NewBufferString(data))
 	if err != nil {
@@ -123,13 +127,16 @@ func (c *Client) Charge(req *ChargeRequest) (*ChargeResponse, error) {
 
 // Refund creates a refund for a charge
 func (c *Client) Refund(req *RefundRequest) (*RefundResponse, error) {
-	data := fmt.Sprintf("charge=%s", req.ChargeID)
+	// Build form data with proper URL encoding
+	formData := url.Values{}
+	formData.Set("charge", req.ChargeID)
 	if req.Amount > 0 {
-		data += fmt.Sprintf("&amount=%d", req.Amount)
+		formData.Set("amount", fmt.Sprintf("%d", req.Amount))
 	}
 	if req.Reason != "" {
-		data += "&reason=" + req.Reason
+		formData.Set("reason", req.Reason)
 	}
+	data := formData.Encode()
 
 	httpReq, err := http.NewRequest("POST", c.BaseURL+"/refunds", bytes.NewBufferString(data))
 	if err != nil {

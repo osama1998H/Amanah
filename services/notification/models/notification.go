@@ -76,10 +76,19 @@ type WebhookConfig struct {
 	ID        string            `json:"id"`
 	URL       string            `json:"url"`
 	Events    []EventType       `json:"events"`
-	Secret    string            `json:"secret"`
-	Headers   map[string]string `json:"headers,omitempty"`
+	Secret    string            `json:"-"` // Never expose secret in API responses
+	Headers   map[string]string `json:"-"` // Never expose custom headers in API responses
 	IsActive  bool              `json:"is_active"`
 	CreatedAt time.Time         `json:"created_at"`
+}
+
+// WebhookConfigInput is used for creating/updating webhook configs (accepts secret)
+type WebhookConfigInput struct {
+	URL      string            `json:"url"`
+	Events   []EventType       `json:"events"`
+	Secret   string            `json:"secret"`
+	Headers  map[string]string `json:"headers,omitempty"`
+	IsActive bool              `json:"is_active"`
 }
 
 // SendNotificationRequest represents a request to send a notification

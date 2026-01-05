@@ -118,11 +118,41 @@ func (h *TransactionHandler) getTransaction(w http.ResponseWriter, r *http.Reque
 // listTransactions handles GET /transactions
 func (h *TransactionHandler) listTransactions(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.URL.Query().Get("merchant_id")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	if limit == 0 {
-		limit = 20
+	// Parse and validate limit
+	limit := 20 // default
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err != nil {
+			h.badRequest(w, "invalid limit parameter")
+			return
+		}
+		if parsedLimit < 0 {
+			h.badRequest(w, "limit cannot be negative")
+			return
+		}
+		if parsedLimit > 0 {
+			limit = parsedLimit
+		}
+		// Cap limit to prevent abuse
+		if limit > 100 {
+			limit = 100
+		}
+	}
+
+	// Parse and validate offset
+	offset := 0
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		parsedOffset, err := strconv.Atoi(offsetStr)
+		if err != nil {
+			h.badRequest(w, "invalid offset parameter")
+			return
+		}
+		if parsedOffset < 0 {
+			h.badRequest(w, "offset cannot be negative")
+			return
+		}
+		offset = parsedOffset
 	}
 
 	txs, total, err := h.service.ListTransactions(merchantID, limit, offset)

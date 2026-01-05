@@ -51,6 +51,7 @@ type RefundRequest struct {
 	Provider    Provider
 	ProviderRef string
 	Amount      int64  // 0 for full refund
+	Currency    string // Required for partial refunds (e.g., "USD", "EUR")
 	Reason      string
 }
 
@@ -403,10 +404,15 @@ func (r *Router) executePayPalRefund(req *RefundRequest) (*RefundResult, error) 
 
 	var refundReq *paypal.RefundRequest
 	if req.Amount > 0 {
+		// Partial refund requires amount AND currency
+		if req.Currency == "" {
+			return nil, errors.New("currency is required for partial refunds")
+		}
 		amountStr := fmt.Sprintf("%.2f", float64(req.Amount)/100)
 		refundReq = &paypal.RefundRequest{
 			Amount: &paypal.Amount{
-				Value: amountStr,
+				CurrencyCode: req.Currency,
+				Value:        amountStr,
 			},
 			NoteToPayer: req.Reason,
 		}
