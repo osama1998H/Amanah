@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/user/Amanah/.claude/hooks/stop-hook.sh",
+            "command": ".claude/hooks/stop-hook.sh",
             "timeout": 30
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/user/Amanah/.claude/hooks/user-prompt-submit-hook.sh",
+            "command": ".claude/hooks/user-prompt-submit-hook.sh",
             "timeout": 10
           }
         ]

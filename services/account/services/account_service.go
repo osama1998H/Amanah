@@ -12,13 +12,15 @@ import (
 )
 
 var (
-	ErrInvalidEmail     = errors.New("invalid email address")
-	ErrInvalidType      = errors.New("invalid account type")
-	ErrInvalidCurrency  = errors.New("invalid currency")
-	ErrAccountFrozen    = errors.New("account is frozen")
-	ErrAccountClosed    = errors.New("account is closed")
+	ErrInvalidEmail        = errors.New("invalid email address")
+	ErrInvalidType         = errors.New("invalid account type")
+	ErrInvalidCurrency     = errors.New("invalid currency")
+	ErrAccountFrozen       = errors.New("account is frozen")
+	ErrAccountClosed       = errors.New("account is closed")
 	ErrInsufficientBalance = errors.New("insufficient balance")
-	ErrKYCRequired      = errors.New("KYC verification required")
+	ErrKYCRequired         = errors.New("KYC verification required")
+	ErrInvalidAmount       = errors.New("amount must be positive")
+	ErrInvalidPagination   = errors.New("invalid pagination parameters")
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -277,8 +279,13 @@ func (s *AccountService) RemovePaymentInstrument(accountID, instrumentID string)
 	return account, nil
 }
 
-// CreditBalance adds funds to an account
+// CreditBalance adds funds to an account using atomic balance update
 func (s *AccountService) CreditBalance(id string, amount int64) (*models.Account, error) {
+	// Validate amount
+	if amount <= 0 {
+		return nil, ErrInvalidAmount
+	}
+
 	account, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -288,17 +295,22 @@ func (s *AccountService) CreditBalance(id string, amount int64) (*models.Account
 		return nil, err
 	}
 
-	account.Balance += amount
-
-	if err := s.repo.Update(account); err != nil {
+	// Use atomic update if repository supports it, otherwise use optimistic locking
+	if err := s.repo.UpdateBalanceAtomic(id, amount); err != nil {
 		return nil, err
 	}
 
-	return account, nil
+	// Fetch updated account
+	return s.repo.GetByID(id)
 }
 
-// DebitBalance removes funds from an account
+// DebitBalance removes funds from an account using atomic balance update
 func (s *AccountService) DebitBalance(id string, amount int64) (*models.Account, error) {
+	// Validate amount
+	if amount <= 0 {
+		return nil, ErrInvalidAmount
+	}
+
 	account, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -308,21 +320,30 @@ func (s *AccountService) DebitBalance(id string, amount int64) (*models.Account,
 		return nil, err
 	}
 
+	// Check balance before attempting debit
 	if account.Balance < amount {
 		return nil, ErrInsufficientBalance
 	}
 
-	account.Balance -= amount
-
-	if err := s.repo.Update(account); err != nil {
+	// Use atomic update if repository supports it
+	if err := s.repo.UpdateBalanceAtomic(id, -amount); err != nil {
+		// Check if it was an insufficient balance error from atomic update
+		if err == ErrInsufficientBalance {
+			return nil, err
+		}
 		return nil, err
 	}
 
-	return account, nil
+	// Fetch updated account
+	return s.repo.GetByID(id)
 }
 
 // ListAccounts returns accounts with filtering and pagination
 func (s *AccountService) ListAccounts(accountType models.AccountType, limit, offset int) ([]*models.Account, int, error) {
+	// Validate pagination parameters
+	if offset < 0 {
+		return nil, 0, ErrInvalidPagination
+	}
 	if limit <= 0 {
 		limit = 20
 	}

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"amanah/libs/logging"
 	"amanah/services/notification/models"
 )
 
@@ -271,9 +273,12 @@ func (s *NotificationService) deliver(notification *models.Notification) {
 // sendEmail sends an email notification
 func (s *NotificationService) sendEmail(notification *models.Notification) error {
 	if s.emailSender == nil {
-		// Log-only mode
-		fmt.Printf("[EMAIL] To: %s, Subject: %s, Body: %s\n",
-			notification.Recipient, notification.Subject, notification.Content)
+		// Log-only mode - use structured logging with masked data
+		logging.WithFields(map[string]interface{}{
+			"notification_id": notification.ID,
+			"type":            "email",
+			"recipient":       maskEmail(notification.Recipient),
+		}).Info("email notification sent (mock mode)")
 		return nil
 	}
 	return s.emailSender.Send(notification.Recipient, notification.Subject, notification.Content)
@@ -282,8 +287,12 @@ func (s *NotificationService) sendEmail(notification *models.Notification) error
 // sendSMS sends an SMS notification
 func (s *NotificationService) sendSMS(notification *models.Notification) error {
 	if s.smsSender == nil {
-		// Log-only mode
-		fmt.Printf("[SMS] To: %s, Message: %s\n", notification.Recipient, notification.Content)
+		// Log-only mode - use structured logging with masked data
+		logging.WithFields(map[string]interface{}{
+			"notification_id": notification.ID,
+			"type":            "sms",
+			"recipient":       maskPhone(notification.Recipient),
+		}).Info("sms notification sent (mock mode)")
 		return nil
 	}
 	return s.smsSender.Send(notification.Recipient, notification.Content)
@@ -292,9 +301,12 @@ func (s *NotificationService) sendSMS(notification *models.Notification) error {
 // sendPush sends a push notification
 func (s *NotificationService) sendPush(notification *models.Notification) error {
 	if s.pushSender == nil {
-		// Log-only mode
-		fmt.Printf("[PUSH] Token: %s, Title: %s, Body: %s\n",
-			notification.Recipient, notification.Subject, notification.Content)
+		// Log-only mode - use structured logging with masked data
+		logging.WithFields(map[string]interface{}{
+			"notification_id": notification.ID,
+			"type":            "push",
+			"token":           maskToken(notification.Recipient),
+		}).Info("push notification sent (mock mode)")
 		return nil
 	}
 	return s.pushSender.Send(notification.Recipient, notification.Subject, notification.Content, notification.Metadata)
@@ -310,8 +322,12 @@ func (s *NotificationService) sendWebhookNotification(notification *models.Notif
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
 
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequest("POST", notification.Recipient, nil)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal webhook payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", notification.Recipient, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -328,7 +344,6 @@ func (s *NotificationService) sendWebhookNotification(notification *models.Notif
 		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
 	}
 
-	_ = body // Use body for actual request
 	return nil
 }
 
@@ -340,12 +355,15 @@ func (s *NotificationService) sendWebhook(webhook *models.WebhookConfig, event m
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
 
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal webhook payload: %w", err)
+	}
 
 	// Calculate signature
 	signature := s.calculateSignature(body, webhook.Secret)
 
-	req, err := http.NewRequest("POST", webhook.URL, nil)
+	req, err := http.NewRequest("POST", webhook.URL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -364,7 +382,10 @@ func (s *NotificationService) sendWebhook(webhook *models.WebhookConfig, event m
 	}
 	defer resp.Body.Close()
 
-	_ = body // Use body for actual request
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
@@ -419,4 +440,43 @@ func generateID(prefix string) (string, error) {
 		return "", err
 	}
 	return prefix + "_" + hex.EncodeToString(bytes), nil
+}
+
+// maskEmail masks an email address for logging (shows first 2 and last 2 chars before @)
+func maskEmail(email string) string {
+	if len(email) < 5 {
+		return "***"
+	}
+	atIndex := -1
+	for i, c := range email {
+		if c == '@' {
+			atIndex = i
+			break
+		}
+	}
+	if atIndex < 0 {
+		return "***"
+	}
+	local := email[:atIndex]
+	domain := email[atIndex:]
+	if len(local) <= 4 {
+		return "**" + domain
+	}
+	return local[:2] + "***" + local[len(local)-1:] + domain
+}
+
+// maskPhone masks a phone number for logging (shows last 4 digits)
+func maskPhone(phone string) string {
+	if len(phone) < 4 {
+		return "***"
+	}
+	return "***-***-" + phone[len(phone)-4:]
+}
+
+// maskToken masks a token for logging (shows first 4 and last 4 chars)
+func maskToken(token string) string {
+	if len(token) < 8 {
+		return "***"
+	}
+	return token[:4] + "***" + token[len(token)-4:]
 }

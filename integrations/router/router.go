@@ -136,6 +136,13 @@ func (r *Router) rebuildOrder() {
 func (r *Router) ProcessPayment(req *PaymentRequest) (*PaymentResult, error) {
 	r.mu.RLock()
 	providers := r.getProvidersForRequest(req)
+	// Copy config data we need while holding the lock
+	providerConfigs := make(map[Provider]ProviderConfig)
+	for _, p := range providers {
+		if cfg, ok := r.providers[p]; ok {
+			providerConfigs[p] = *cfg
+		}
+	}
 	r.mu.RUnlock()
 
 	if len(providers) == 0 {
@@ -144,7 +151,8 @@ func (r *Router) ProcessPayment(req *PaymentRequest) (*PaymentResult, error) {
 
 	var lastErr error
 	for _, provider := range providers {
-		result, err := r.processWithProvider(provider, req)
+		config := providerConfigs[provider]
+		result, err := r.processWithProvider(provider, &config, req)
 		if err == nil {
 			return result, nil
 		}
@@ -195,8 +203,7 @@ func (r *Router) supportsCurrency(config *ProviderConfig, currency string) bool 
 }
 
 // processWithProvider processes payment with a specific provider
-func (r *Router) processWithProvider(provider Provider, req *PaymentRequest) (*PaymentResult, error) {
-	config := r.providers[provider]
+func (r *Router) processWithProvider(provider Provider, config *ProviderConfig, req *PaymentRequest) (*PaymentResult, error) {
 	maxRetries := config.MaxRetries
 	if maxRetries <= 0 {
 		maxRetries = 1
@@ -212,10 +219,66 @@ func (r *Router) processWithProvider(provider Provider, req *PaymentRequest) (*P
 		if err == nil {
 			return result, nil
 		}
+
+		// Don't retry on client errors (4xx equivalent)
+		if isClientError(err) {
+			return nil, err
+		}
 		lastErr = err
 	}
 
 	return nil, lastErr
+}
+
+// isClientError checks if the error is a client error that shouldn't be retried
+func isClientError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	// Common client error patterns - don't retry these
+	clientErrors := []string{
+		"invalid", "unauthorized", "forbidden", "not found",
+		"bad request", "validation", "insufficient funds",
+	}
+	for _, ce := range clientErrors {
+		if contains(errStr, ce) {
+			return true
+		}
+	}
+	return false
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsLower(s, substr))
+}
+
+func containsLower(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if matchLower(s[i:i+len(substr)], substr) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchLower(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		ca, cb := a[i], b[i]
+		if ca >= 'A' && ca <= 'Z' {
+			ca += 32
+		}
+		if cb >= 'A' && cb <= 'Z' {
+			cb += 32
+		}
+		if ca != cb {
+			return false
+		}
+	}
+	return true
 }
 
 // executePayment executes payment on a specific provider

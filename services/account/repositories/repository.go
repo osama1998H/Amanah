@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	ErrAccountNotFound    = errors.New("account not found")
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInstrumentNotFound = errors.New("payment instrument not found")
-	ErrConcurrentUpdate   = errors.New("concurrent update detected")
+	ErrAccountNotFound     = errors.New("account not found")
+	ErrEmailAlreadyExists  = errors.New("email already exists")
+	ErrInstrumentNotFound  = errors.New("payment instrument not found")
+	ErrConcurrentUpdate    = errors.New("concurrent update detected")
+	ErrInsufficientBalance = errors.New("insufficient balance")
 )
 
 // AccountRepository defines the interface for account storage
@@ -22,6 +23,7 @@ type AccountRepository interface {
 	GetByEmail(email string) (*models.Account, error)
 	Update(account *models.Account) error
 	UpdateWithVersion(account *models.Account, expectedVersion int64) error
+	UpdateBalanceAtomic(id string, delta int64) error
 	Delete(id string) error
 	List(accountType models.AccountType, limit, offset int) ([]*models.Account, int, error)
 }
@@ -171,6 +173,27 @@ func (r *InMemoryRepository) List(accountType models.AccountType, limit, offset 
 	}
 
 	return filtered[offset:end], total, nil
+}
+
+// UpdateBalanceAtomic atomically updates an account balance by delta
+func (r *InMemoryRepository) UpdateBalanceAtomic(id string, delta int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	account, exists := r.accounts[id]
+	if !exists {
+		return ErrAccountNotFound
+	}
+
+	newBalance := account.Balance + delta
+	if newBalance < 0 {
+		return ErrInsufficientBalance
+	}
+
+	account.Balance = newBalance
+	account.UpdatedAt = time.Now().UTC()
+	r.versions[id]++
+	return nil
 }
 
 // GetVersion returns the current version of an account
