@@ -284,11 +284,12 @@ func (hc *HealthChecker) HealthHandler() http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 
-		if health.Status == HealthStatusHealthy {
+		switch health.Status {
+		case HealthStatusHealthy:
 			w.WriteHeader(http.StatusOK)
-		} else if health.Status == HealthStatusDegraded {
+		case HealthStatusDegraded:
 			w.WriteHeader(http.StatusOK) // Still OK but degraded
-		} else {
+		default:
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 

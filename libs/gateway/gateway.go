@@ -8,7 +8,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"amanah/libs/auth"
@@ -75,7 +74,6 @@ type Gateway struct {
 	apiKeyManager   *auth.APIKeyManager
 	rbacManager     *auth.RBACManager
 	rateLimiter     *middleware.RateLimiter
-	mu              sync.RWMutex
 	requestLogger   RequestLogger
 }
 

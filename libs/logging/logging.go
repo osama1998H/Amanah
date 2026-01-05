@@ -13,6 +13,17 @@ import (
 	"time"
 )
 
+// ContextKey is a custom type for context keys to avoid collisions
+type ContextKey string
+
+// Context keys for logging
+const (
+	CtxKeyTraceID   ContextKey = "trace_id"
+	CtxKeySpanID    ContextKey = "span_id"
+	CtxKeyRequestID ContextKey = "request_id"
+	CtxKeyUserID    ContextKey = "user_id"
+)
+
 // Level represents log level
 type Level int
 
@@ -181,17 +192,17 @@ func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
 func (l *Logger) WithContext(ctx context.Context) *Logger {
 	newLogger := l.WithFields(nil)
 
-	// Extract common context values
-	if traceID := ctx.Value("trace_id"); traceID != nil {
+	// Extract common context values using typed keys
+	if traceID := ctx.Value(CtxKeyTraceID); traceID != nil {
 		newLogger.fields["trace_id"] = traceID
 	}
-	if spanID := ctx.Value("span_id"); spanID != nil {
+	if spanID := ctx.Value(CtxKeySpanID); spanID != nil {
 		newLogger.fields["span_id"] = spanID
 	}
-	if requestID := ctx.Value("request_id"); requestID != nil {
+	if requestID := ctx.Value(CtxKeyRequestID); requestID != nil {
 		newLogger.fields["request_id"] = requestID
 	}
-	if userID := ctx.Value("user_id"); userID != nil {
+	if userID := ctx.Value(CtxKeyUserID); userID != nil {
 		newLogger.fields["user_id"] = userID
 	}
 

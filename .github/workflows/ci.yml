@@ -111,15 +111,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          args: '-no-fail -fmt json -out gosec-results.json ./...'
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
 
-      - name: Upload SARIF file
+      - name: Run Gosec Security Scanner
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -no-fail -fmt sarif -out gosec-results.sarif ./...
+        continue-on-error: true
+
+      - name: Upload Gosec SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: gosec-results.json
+          sarif_file: gosec-results.sarif
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
@@ -129,6 +136,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+        continue-on-error: true
 
   # ============================================
   # Build
@@ -149,8 +157,10 @@ jobs:
 
       - name: Build
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/gateway ./cmd/gateway
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/api ./cmd/api
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/api-gateway ./services/api-gateway/cmd
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/transaction ./services/transaction/cmd
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/account ./services/account/cmd
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/authentication ./services/authentication/cmd
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

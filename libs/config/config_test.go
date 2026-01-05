@@ -201,7 +201,7 @@ func TestGet(t *testing.T) {
 	// Get should return default config when not loaded
 	cfg := Get()
 	if cfg == nil {
-		t.Error("Expected Get to return default config")
+		t.Fatal("Expected Get to return default config")
 	}
 	if cfg.App.Name != "amanah" {
 		t.Error("Expected default config values")

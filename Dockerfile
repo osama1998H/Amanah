@@ -26,14 +26,22 @@ ARG VERSION=dev
 ARG COMMIT_SHA=unknown
 ARG BUILD_TIME=unknown
 
-# Build the application
+# Build all services
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
-    -o /app/bin/gateway ./cmd/gateway
+    -o /app/bin/api-gateway ./services/api-gateway/cmd
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
-    -o /app/bin/api ./cmd/api
+    -o /app/bin/transaction ./services/transaction/cmd
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
+    -o /app/bin/account ./services/account/cmd
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
+    -o /app/bin/authentication ./services/authentication/cmd
 
 # ============================================
 # Stage 2: Production Runtime
@@ -73,7 +81,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health/live || exit 1
 
 # Default command (can be overridden)
-CMD ["./bin/gateway"]
+CMD ["./bin/api-gateway"]
 
 # ============================================
 # Stage 3: Development

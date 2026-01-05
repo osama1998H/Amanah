@@ -200,8 +200,8 @@ func TestLoggerWithContext(t *testing.T) {
 	logger := NewLogger(config)
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "request_id", "ctx-req-123")
-	ctx = context.WithValue(ctx, "user_id", "ctx-user-456")
+	ctx = context.WithValue(ctx, CtxKeyRequestID, "ctx-req-123")
+	ctx = context.WithValue(ctx, CtxKeyUserID, "ctx-user-456")
 
 	logger.WithContext(ctx).Info("context log")
 

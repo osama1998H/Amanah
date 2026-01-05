@@ -45,7 +45,7 @@ func (c *Counter) Add(name string, delta int64) {
 
 	c.mu.Lock()
 	if ptr, exists = c.values[name]; !exists {
-		var v int64 = delta
+		v := delta
 		c.values[name] = &v
 	} else {
 		atomic.AddInt64(ptr, delta)
@@ -526,7 +526,6 @@ func RecordRequest(method, path string, statusCode int, duration time.Duration) 
 // Timer helps measure duration
 type Timer struct {
 	start time.Time
-	name  string
 	hist  *Histogram
 }
 
