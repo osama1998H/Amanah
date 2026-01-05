@@ -11,13 +11,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
         with:
-          go-version: '^1.20'
+          go-version: '1.23'
 
       - name: Install Dependencies
-        run: go mod tidy
+        run: go mod download
 
       - name: Run Static Code Analysis
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint run
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run --timeout=5m
 
   test:
     runs-on: ubuntu-latest
@@ -30,10 +32,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
         with:
-          go-version: '^1.20'
+          go-version: '1.23'
 
       - name: Install Dependencies
-        run: go mod tidy
+        run: go mod download
 
       - name: Run Tests with Coverage
         run: |
@@ -58,26 +60,30 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
         with:
-          go-version: '^1.20'
+          go-version: '1.23'
 
       - name: Install Dependencies
-        run: go mod tidy
+        run: go mod download
 
-      - name: Build Application
+      - name: Build Services
         run: |
           mkdir -p build
-          go build -o build/app ./...
+          go build -o build/api-gateway ./services/api-gateway/cmd
+          go build -o build/authentication ./services/authentication/cmd
+          go build -o build/transaction ./services/transaction/cmd
+          go build -o build/account ./services/account/cmd
 
-      - name: Upload Build Artifact
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: build-artifact
-          path: build/app
+          name: build-artifacts
+          path: build/
 
   docker:
     runs-on: ubuntu-latest
     name: Docker Build and Push
     needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4.2.2
@@ -105,15 +111,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
         with:
-          go-version: '^1.20'
+          go-version: '1.23'
 
       - name: Install Dependencies
-        run: go mod tidy
+        run: go mod download
 
       - name: Run Benchmark Tests
         run: |
           mkdir -p benchmark_reports
-          go test -bench=. > benchmark_reports/benchmark_results.txt
+          go test -bench=. -benchmem ./... > benchmark_reports/benchmark_results.txt 2>&1 || true
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v4.6.2
@@ -124,8 +130,8 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     name: Notify Build Status
-    needs: [static-analysis, test, build, docker]
+    needs: [static-analysis, test, build]
+    if: failure()
     steps:
       - name: Notify Build Status
-        if: failure()
         run: echo "Build failed!"

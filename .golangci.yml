@@ -1,15 +1,12 @@
+version: "2"
+
 run:
   timeout: 5m
 
 linters:
-  disable-all: true
-  enable:
-    - govet
-    - staticcheck
-    - unused
-    - gosimple
-    - ineffassign
-    - typecheck
+  default: standard
+  disable:
+    - errcheck
 
 linters-settings:
   staticcheck:
