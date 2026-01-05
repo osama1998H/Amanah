@@ -40,14 +40,23 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           mkdir -p coverage
-          go test -v -coverprofile=coverage/coverage.out ./...
-          go tool cover -func=coverage/coverage.out
+          go test -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+          go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+
+      - name: Check Coverage Threshold
+        run: |
+          COVERAGE=$(tail -1 coverage/coverage.txt | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "::warning::Coverage ${COVERAGE}% is below 70% threshold"
+          fi
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4.6.2
         with:
           name: coverage-report
-          path: coverage/coverage.out
+          path: coverage/
 
   build:
     runs-on: ubuntu-latest

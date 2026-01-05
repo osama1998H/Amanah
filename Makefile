@@ -96,9 +96,15 @@ test:
 ## test-coverage: Run tests with coverage
 test-coverage:
 	@echo "Running tests with coverage..."
-	$(GOTEST) -v -race -coverprofile=coverage.out -covermode=atomic ./...
-	$(GOCMD) tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+	@mkdir -p coverage
+	$(GOTEST) -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./...
+	$(GOCMD) tool cover -html=coverage/coverage.out -o coverage/coverage.html
+	$(GOCMD) tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+	@echo ""
+	@echo "Coverage report generated:"
+	@echo "  - HTML: coverage/coverage.html"
+	@echo "  - Text: coverage/coverage.txt"
+	@tail -1 coverage/coverage.txt
 
 ## test-short: Run short tests only
 test-short:
@@ -108,7 +114,21 @@ test-short:
 ## test-integration: Run integration tests
 test-integration:
 	@echo "Running integration tests..."
-	$(GOTEST) -v -tags=integration ./...
+	$(GOTEST) -v -tags=integration ./tests/integration/...
+
+## test-e2e: Run end-to-end tests
+test-e2e:
+	@echo "Running E2E tests..."
+	$(GOTEST) -v -tags=e2e ./tests/e2e/...
+
+## test-all: Run all tests (unit, integration, e2e)
+test-all: test test-integration test-e2e
+
+## test-service: Run tests for a specific service (usage: make test-service SERVICE=account)
+test-service:
+	@echo "Running tests for $(SERVICE) service..."
+	$(GOTEST) -v -race -coverprofile=coverage/$(SERVICE).out ./services/$(SERVICE)/...
+	$(GOCMD) tool cover -func=coverage/$(SERVICE).out
 
 ## bench: Run benchmarks
 bench:
