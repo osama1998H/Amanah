@@ -6,7 +6,7 @@ jobs:
     name: Static Analysis
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
@@ -27,7 +27,7 @@ jobs:
     needs: static-analysis
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
@@ -64,7 +64,7 @@ jobs:
     needs: test
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
@@ -95,7 +95,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -115,7 +115,7 @@ jobs:
     needs: test
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v5.4.0
