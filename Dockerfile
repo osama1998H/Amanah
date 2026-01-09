@@ -46,7 +46,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 # ============================================
 # Stage 2: Production Runtime
 # ============================================
-FROM alpine:3.19 AS production
+FROM alpine:3.23 AS production
 
 # Security: Run as non-root user
 RUN addgroup -g 1000 amanah && \
