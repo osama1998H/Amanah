@@ -4,7 +4,7 @@
 # ============================================
 # Stage 1: Build
 # ============================================
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -86,7 +86,7 @@ CMD ["./bin/api-gateway"]
 # ============================================
 # Stage 3: Development
 # ============================================
-FROM golang:1.23-alpine AS development
+FROM golang:1.25-alpine AS development
 
 # Install development tools
 RUN apk add --no-cache git make curl bash
